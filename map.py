@@ -1,5 +1,6 @@
 # Hive Classes
 import math as m
+import pygame as pg
 
 class Hex(object):
     def __init__(self, q,r,s):
@@ -8,6 +9,8 @@ class Hex(object):
         self.q = q
         self.r = r
         self.s = s
+        self.bgcolor = 0x00FFF0
+        self.fgcolor = 0xFFFFFF
     
     def __add__(self, other):
         a = self.loc[0] + other.loc[0]
@@ -30,8 +33,6 @@ class Hex(object):
         return false
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
         
     def __add__(self, other):
         a = self.loc[0] + other.loc[0]
@@ -53,24 +54,8 @@ class Hex(object):
             return self.loc == other.loc
         return false
     def __ne__(self, other):
-        return not self.__eq__(other)
+        return not self.__eq__(other)    
 
-hex_directions = [
-    Hex(1, 0, -1), Hex(1, -1, 0), Hex(0, -1, 1),
-    Hex(-1, 0, 1), Hex(-1, 1, 0), Hex(0, 1, -1)]
-def length(self, hex):
-    return int((m.abs(hex.q) + m.abs(hex.r) + m.abs(hex.s)) / 2)
-def distance(self, a, b):
-    return length(a-b)
-def direction(direction):
-    return self.hex_directions[direction % 6]
-def neighbor(hex, direc):
-    return hex + direction(direc)
-    
-
-    
-class Map(object):
-    pass
 
 # Helper class
 class Orientation(object):
@@ -112,18 +97,6 @@ class Layout(object):
         q = M.b0 * pt.x + M.b1 * pt.y
         r = M.b2 * pt.x + M.b3 * pt.y
         return FactionalHex(q, r, -q - r)
-    def FractionalHex(q, r, s):
-        q_ = round(q)
-        r_ = round(r)
-        s_ = round(s)
-        q_diff = m.abs(q_ - q)
-        r_diff = m.abs(r_ - r)
-        s_diff = m.abs(r_ - r)
-        if q_diff > r_diff and q_diff > s_diff:
-            q = -r -s
-        elif r_diff > s_diff:
-            s = -q -r
-        return Hex(q, r, s)
     def hex_corner_offset(self, corner):
         size = self.size
         M = self.orientation
@@ -138,3 +111,62 @@ class Layout(object):
                                  center.y + offset.y).l())
         return corners
     
+hex_directions = [
+    Hex(1, 0, -1), Hex(1, -1, 0), Hex(0, -1, 1),
+    Hex(-1, 0, 1), Hex(-1, 1, 0), Hex(0, 1, -1)]
+        
+
+# Standalone Functions:
+
+def length(self, hex):
+    return int((m.abs(hex.q) + m.abs(hex.r) + m.abs(hex.s)) / 2)
+
+def distance(self, a, b):
+    return length(a-b)
+
+def direction(direction):
+    return self.hex_directions[direction % 6]
+
+def neighbor(hex, direc):
+    return hex + direction(direc)
+
+def FractionalHex(q, r, s):
+    q_ = round(q)
+    r_ = round(r)
+    s_ = round(s)
+    q_diff = m.abs(q_ - q)
+    r_diff = m.abs(r_ - r)
+    s_diff = m.abs(r_ - r)
+    if q_diff > r_diff and q_diff > s_diff:
+        q = -r -s
+    elif r_diff > s_diff:
+        s = -q -r
+    return Hex(q, r, s)
+
+def lerp(a, b, t): # linear interpolation
+    return a* (1-t) + b * t
+def hex_lerp(ha, hb, t):
+    return FractionalHex(lerp(ha.q, hb.q, t),
+                         lerp(ha.r, hb.r, t),
+                         lerp(ha.s, hb.s, t))
+
+
+
+class Map(object):
+    def __init__(self, scr, layout):
+        self.scr = scr
+        self.L = layout
+        self.map = [
+            Hex(0,0,0),
+            Hex(1,-1,0),
+            Hex(-1,1,0),
+            Hex(0,1,-1),
+            Hex(0,-1,1)
+        ]
+    def draw_hex(self, hex):
+        ptl = self.L.polygon_corners(hex)
+        pg.draw.polygon(self.scr, hex.bgcolor, ptl)
+        pg.draw.polygon(self.scr, hex.fgcolor, ptl, 1)
+    def draw_map(self):
+        for h in self.map:
+            self.draw_hex(h)
