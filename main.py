@@ -19,6 +19,7 @@ orient = map.layout_flat
 origin = map.Point(dim[0]/2, dim[1]/2)
 L = map.Layout(orient, s, origin)
 M = map.Map(scr, L)
+M.gen_map("hex", 5)
 M.draw_map()
 
 while True:

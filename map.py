@@ -170,3 +170,32 @@ class Map(object):
     def draw_map(self):
         for h in self.map:
             self.draw_hex(h)
+
+    def gen_map(self, t="parallel", *xargs):
+        t = t.lower()
+        self.map = []
+        if t == "para": # Four args, x1,y1, x2,y2
+            for q in range(xargs[0], xargs[1]+1):
+                for r in range(xargs[2], xargs[3]):
+                    self.map.append(Hex(q, r, -q-r))
+        elif t == "vtri": # One arg, height
+            for q in range(0, xargs[0]):
+                for r in range(0, xargs[0]):
+                    self.map.append(Hex(q, r, -q-r))
+        elif t == "htri": # One arg, height
+            for q in range(0, xargs[0]):
+                for r in range(xargs[0]-q, xargs[0]):
+                    self.map.append(Hex(q, r, -q-r))
+        elif t == "hex": # One arg, radius
+            for q in range(-1*xargs[0], xargs[0]):
+                r1 = max(-1*xargs[0], -q - xargs[0])
+                r2 = min(xargs[0], -q + xargs[0])
+                for r in range(r1, r2):
+                    self.map.append(Hex(q, r, -q-r))
+        elif t == "rect": # Two args, w,h
+            for r in range(0,xargs[1]):
+                r_offset = m.floor(r/2)
+                for q in range(-r_offset, xargs[0] - r_offset):
+                    self.map.append(Hex(q, r, -q-r))
+        self.draw_map()
+        pg.display.flip()
