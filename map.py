@@ -2,6 +2,8 @@
 import math as m
 import pygame as pg
 
+debug = True
+
 class Hex(object):
     def __init__(self, q,r,s):
         assert(q+r+s == 0)
@@ -163,10 +165,20 @@ class Map(object):
             Hex(0,1,-1),
             Hex(0,-1,1)
         ]
+        self.fnt = pg.font.SysFont('freemono', 12)
     def draw_hex(self, hex):
         ptl = self.L.polygon_corners(hex)
-        pg.draw.polygon(self.scr, hex.bgcolor, ptl)
+        #pg.draw.polygon(self.scr, hex.bgcolor, ptl)
         pg.draw.polygon(self.scr, hex.fgcolor, ptl, 1)
+        if debug:
+            ct = "{},{}".format(hex.q, hex.r)
+            s = self.fnt.size(ct)
+            txt = self.fnt.render(ct, True, (255,255,0))
+            loc = self.L.hex_to_pixel(hex).l()
+            loc[0] = loc[0] - int(s[0]/2)
+            loc[1] = loc[1] - int(s[1]/2)
+            self.scr.blit(txt, loc)
+            
     def draw_map(self):
         for h in self.map:
             self.draw_hex(h)
@@ -187,11 +199,13 @@ class Map(object):
                 for r in range(xargs[0]-q, xargs[0]):
                     self.map.append(Hex(q, r, -q-r))
         elif t == "hex": # One arg, radius
-            for q in range(-1*xargs[0], xargs[0]):
+            for q in range(-1*xargs[0] + 1, xargs[0]):
                 r1 = max(-1*xargs[0], -q - xargs[0])
                 r2 = min(xargs[0], -q + xargs[0])
-                for r in range(r1, r2):
+                for r in range(r1 + 1, r2):
                     self.map.append(Hex(q, r, -q-r))
+                    if q == 0 and r == 0:
+                        self.map[-1].bgcolor = 0xFF0000
         elif t == "rect": # Two args, w,h
             for r in range(0,xargs[1]):
                 r_offset = m.floor(r/2)

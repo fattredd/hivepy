@@ -11,15 +11,16 @@ pg.font.init()
 
 dim = (700, 400)
 scr = pg.display.set_mode(dim)
+
 pg.display.set_caption("Hive")
 clk = pg.time.Clock()
 
-s = map.Point(15,15)
-orient = map.layout_flat
+s = map.Point(20,20)
+orient = map.layout_pointy
 origin = map.Point(dim[0]/2, dim[1]/2)
 L = map.Layout(orient, s, origin)
 M = map.Map(scr, L)
-M.gen_map("hex", 5)
+M.gen_map("hex", 6)
 M.draw_map()
 
 while True:
