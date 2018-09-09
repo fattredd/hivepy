@@ -118,6 +118,60 @@ class Layout(object):
             corners.append(Point(center.x + offset.x,
                                  center.y + offset.y).l())
         return corners
+
+class Icon(object):
+    def __init__(self, loc, color, text, scr, mode):
+        self.txtcolor = 0xffffff
+        self.color = color
+        self.outline = 0xffffff
+        self.loc = (loc[0]*50, loc[1]*50)
+        self.scr = scr
+        self.text = text
+        self.Modeset = mode
+        l, t = self.loc
+        self.fnt = pg.font.SysFont('freemono', 12)
+        self.rect = pg.Rect(l,t , 50, 50)
+    def draw(self):
+        pg.draw.rect(self.scr, self.color, self.rect)
+        pg.draw.rect(self.scr, self.outline, self.rect, 1)
+        s = self.fnt.size(self.text)
+        txt = self.fnt.render(self.text, True, (255,255,255))
+        loc = (self.loc[0]+5, self.loc[1]+15)
+        self.scr.blit(txt, loc)
+    def clear(self):
+        self.outline = 0xffffff
+        self.draw()
+    def click(self):
+        print(self.text)
+        self.outline = 0xff00ff
+        self.draw()
+        return self.Modeset
+        
+    
+class Menu(object):
+    def __init__(self, h, w, scr):
+        self.size = (h,w)
+        self.icons = [
+            Icon((0,0), 0x1C1C1C, "Delete", scr, 1),
+            Icon((1,0), 0x1C1C1C, "Add Queen", scr, 2),
+            Icon((2,0), 0x1C1C1C, "Add Ant", scr,3),
+            Icon((3,0), 0x1C1C1C, "3", scr,4),
+            Icon((4,0), 0x1C1C1C, "4", scr,5)
+            ]
+        self.mode = 1
+        self.player = 1
+    def draw(self):
+        for item in self.icons:
+            item.draw()
+    def click_button(self, pos):
+        buttonNum = pos[0] // 50
+        #clear bttns
+        for bttn in self.icons:
+            bttn.clear()
+        try:
+            self.mode = self.icons[buttonNum].click()
+        except:
+            print("No button found at", buttonNum)
     
 hex_directions = [
     Hex(1, 0, -1), Hex(1, -1, 0), Hex(0, -1, 1),
@@ -221,3 +275,28 @@ class Map(object):
                     self.map.append(Hex(q, r, -q-r))
         self.draw_map()
         pg.display.flip()
+
+class Game(object):
+    def __init__(self, h, w, name=""):
+        self.scr = pg.display.set_mode((h,w))
+        pg.display.set_caption(name)
+        self.clk = pg.time.Clock()
+        s = Point(23,23)
+        orient = layout_pointy
+        origin = Point(h/2, (w-50)/2 + 50)
+        self.L = Layout(orient, s, origin)
+        self.M = Map(self.scr, self.L)
+        self.Me =Menu(50, w, self.scr)
+        self.Me.draw()
+        #M.gen_map("hex", 6)
+        #M.draw_map()
+
+    def handle_click(self, pos):
+        if pos[1] > 50: # if clicked in hex region
+            p = Point(pos[0], pos[1])
+            newHex = self.L.pixel_to_hex(p)
+            newHex.bgcolor = 0x0F0F0F
+            self.M.draw_hex(newHex)
+        if pos[1] < 50:
+            self.Me.click_button(pos)
+            #pass
