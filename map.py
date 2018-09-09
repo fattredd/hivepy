@@ -34,8 +34,11 @@ class Hex(object):
         c = self.loc[2] * k
         return Hex(a,b,c)
     def __eq__(self, other):
-        if isInstance(other, Hex):
+        try:
             return self.loc == other.loc
+        except TypeError:
+            print("TypeError comapring hexes")
+            return False
         return false
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -55,12 +58,6 @@ class Hex(object):
         b = self.loc[1] * k
         c = self.loc[2] * k
         return Hex(a,b,c)
-    def __eq__(self, other):
-        if isInstance(other, Hex):
-            return self.loc == other.loc
-        return false
-    def __ne__(self, other):
-        return not self.__eq__(other)
     def __repr__(self):
         return "<Hex at {}, {}, {}>".format(self.q, self.r, self.s)
 
@@ -89,10 +86,15 @@ class Point(object):
         return [self.x, self.y]
 
 class Layout(object):
-    def __init__(self, orient, size, origin):
+    def __init__(self, orient, size, origin, w, h):
         self.orientation = orient
         self.size = size
         self.origin = origin
+        self.w = w
+        self.h = h
+
+        self.map_rect = pg.Rect(0, 50, w, h-50)
+        self.menu_rect = pg.Rect(0, 0, w, 50)
     def hex_to_pixel(self, h):
         M = self.orientation
         x = (M.f0 * h.q + M.f1 * h.r) * self.size.x
@@ -120,9 +122,9 @@ class Layout(object):
         return corners
 
 class Icon(object):
-    def __init__(self, loc, color, text, scr, mode):
+    def __init__(self, loc, text, scr, mode):
         self.txtcolor = 0xffffff
-        self.color = color
+        self.color = 0x1c1c1c
         self.outline = 0xffffff
         self.loc = (loc[0]*50, loc[1]*50)
         self.scr = scr
@@ -140,10 +142,12 @@ class Icon(object):
         self.scr.blit(txt, loc)
     def clear(self):
         self.outline = 0xffffff
+        self.color = 0x1c1c1c
         self.draw()
     def click(self):
         print(self.text)
         self.outline = 0xff00ff
+        self.color = 0x101010
         self.draw()
         return self.Modeset
         
@@ -152,14 +156,12 @@ class Menu(object):
     def __init__(self, h, w, scr):
         self.size = (h,w)
         self.icons = [
-            Icon((0,0), 0x1C1C1C, "Delete", scr, 1),
-            Icon((1,0), 0x1C1C1C, "Add Queen", scr, 2),
-            Icon((2,0), 0x1C1C1C, "Add Ant", scr,3),
-            Icon((3,0), 0x1C1C1C, "3", scr,4),
-            Icon((4,0), 0x1C1C1C, "4", scr,5)
+            Icon((0,0), "Delete", scr, 1),
+            Icon((1,0), "Queen", scr, 2),
+            Icon((2,0), "Ant", scr,3),
+            Icon((3,0), "Spider", scr,4),
+            Icon((4,0), "4", scr,5)
             ]
-        self.mode = 1
-        self.player = 1
     def draw(self):
         for item in self.icons:
             item.draw()
@@ -169,8 +171,8 @@ class Menu(object):
         for bttn in self.icons:
             bttn.clear()
         try:
-            self.mode = self.icons[buttonNum].click()
-        except:
+            return self.icons[buttonNum].click()
+        except IndexError:
             print("No button found at", buttonNum)
     
 hex_directions = [
@@ -220,14 +222,9 @@ class Map(object):
     def __init__(self, scr, layout):
         self.scr = scr
         self.L = layout
-        self.map = [
-            Hex(0,0,0),
-            Hex(1,-1,0),
-            Hex(-1,1,0),
-            Hex(0,1,-1),
-            Hex(0,-1,1)
-        ]
+        self.map = []
         self.fnt = pg.font.SysFont('freemono', 12)
+        self.clear_map()
     def draw_hex(self, hex):
         ptl = self.L.polygon_corners(hex)
         pg.draw.polygon(self.scr, hex.bgcolor, ptl)
@@ -240,8 +237,34 @@ class Map(object):
             loc[0] = loc[0] - int(s[0]/2)
             loc[1] = loc[1] - int(s[1]/2)
             self.scr.blit(txt, loc)
-            
+    def hex_exists(self, hex):
+        for val in self.map:
+            if hex == val:
+                return True
+        return False
+    def add_hex(self, hex):
+        # Replace any preexisting hexes
+        replacement = False
+        for i, val in enumerate(self.map):
+            if val == hex:
+                self.map[i] = hex
+                replacement = True
+        if not replacement: # or add a new one
+            self.map.append(hex)
+        self.draw_map()
+    def rm_hex(self, hex):
+        self.map.remove(hex)
+        self.draw_map()
+    def toggle_hex(self, hex):
+        if not self.hex_exists(hex):
+            self.add_hex(hex)
+        else:
+            self.rm_hex(hex)
+    def clear_map(self):
+        rect = self.L.map_rect
+        pg.draw.rect(self.scr, 0, rect)
     def draw_map(self):
+        self.clear_map()
         for h in self.map:
             self.draw_hex(h)
 
@@ -284,19 +307,24 @@ class Game(object):
         s = Point(23,23)
         orient = layout_pointy
         origin = Point(h/2, (w-50)/2 + 50)
-        self.L = Layout(orient, s, origin)
+        self.L = Layout(orient, s, origin, w, h)
         self.M = Map(self.scr, self.L)
         self.Me =Menu(50, w, self.scr)
         self.Me.draw()
         #M.gen_map("hex", 6)
         #M.draw_map()
 
+        self.mode = 0
+        self.player = 0
+
     def handle_click(self, pos):
         if pos[1] > 50: # if clicked in hex region
             p = Point(pos[0], pos[1])
             newHex = self.L.pixel_to_hex(p)
             newHex.bgcolor = 0x0F0F0F
-            self.M.draw_hex(newHex)
+            self.M.toggle_hex(newHex)
         if pos[1] < 50:
-            self.Me.click_button(pos)
-            #pass
+            newMode = self.Me.click_button(pos)
+            if newMode == 0:
+                # Delete Mode
+                pass
