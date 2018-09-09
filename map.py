@@ -6,13 +6,17 @@ debug = True
 
 class Hex(object):
     def __init__(self, q,r,s):
-        assert(q+r+s == 0)
+        try:
+            assert(q+r+s == 0)
+        except:
+            print("Error making hex at {}, {}, {}".format(q,r,s))
+            raise AssertionError
         self.loc = (q,r,s)
         self.q = q
         self.r = r
         self.s = s
-        self.bgcolor = 0x00FFF0
-        self.fgcolor = 0xFFFFFF
+        self.bgcolor = 0x718dba
+        self.fgcolor = 0xCCCCCC
     
     def __add__(self, other):
         a = self.loc[0] + other.loc[0]
@@ -56,7 +60,9 @@ class Hex(object):
             return self.loc == other.loc
         return false
     def __ne__(self, other):
-        return not self.__eq__(other)    
+        return not self.__eq__(other)
+    def __repr__(self):
+        return "<Hex at {}, {}, {}>".format(self.q, self.r, self.s)
 
 
 # Helper class
@@ -98,7 +104,7 @@ class Layout(object):
                    (p.y - self.origin.y) / self.size.y)
         q = M.b0 * pt.x + M.b1 * pt.y
         r = M.b2 * pt.x + M.b3 * pt.y
-        return FactionalHex(q, r, -q - r)
+        return FractionalHex(q, r, -q - r)
     def hex_corner_offset(self, corner):
         size = self.size
         M = self.orientation
@@ -136,14 +142,16 @@ def FractionalHex(q, r, s):
     q_ = round(q)
     r_ = round(r)
     s_ = round(s)
-    q_diff = m.abs(q_ - q)
-    r_diff = m.abs(r_ - r)
-    s_diff = m.abs(r_ - r)
+    q_diff = abs(q_ - q)
+    r_diff = abs(r_ - r)
+    s_diff = abs(s_ - s)
     if q_diff > r_diff and q_diff > s_diff:
-        q = -r -s
+        q_ = -r_ -s_
     elif r_diff > s_diff:
-        s = -q -r
-    return Hex(q, r, s)
+        s_ = -q_ -r_
+    else:
+        s_ = -q_ -r_
+    return Hex(q_, r_, s_)
 
 def lerp(a, b, t): # linear interpolation
     return a* (1-t) + b * t
@@ -168,12 +176,12 @@ class Map(object):
         self.fnt = pg.font.SysFont('freemono', 12)
     def draw_hex(self, hex):
         ptl = self.L.polygon_corners(hex)
-        #pg.draw.polygon(self.scr, hex.bgcolor, ptl)
+        pg.draw.polygon(self.scr, hex.bgcolor, ptl)
         pg.draw.polygon(self.scr, hex.fgcolor, ptl, 1)
         if debug:
             ct = "{},{}".format(hex.q, hex.r)
             s = self.fnt.size(ct)
-            txt = self.fnt.render(ct, True, (255,255,0))
+            txt = self.fnt.render(ct, True, (255,255,255))
             loc = self.L.hex_to_pixel(hex).l()
             loc[0] = loc[0] - int(s[0]/2)
             loc[1] = loc[1] - int(s[1]/2)
@@ -205,7 +213,7 @@ class Map(object):
                 for r in range(r1 + 1, r2):
                     self.map.append(Hex(q, r, -q-r))
                     if q == 0 and r == 0:
-                        self.map[-1].bgcolor = 0xFF0000
+                        self.map[-1].bgcolor = 0x71bab6
         elif t == "rect": # Two args, w,h
             for r in range(0,xargs[1]):
                 r_offset = m.floor(r/2)
