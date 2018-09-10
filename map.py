@@ -23,11 +23,11 @@ c.append({
     "selected": 0xc0c0c0,
     "swapl": 0xc0c5c1,
     "swapd": 0x343633,
-    "u1"   : 0xf7ce5b, # 0xaf9b46 yellow
+    "u1"   : 0xaf9b46, #yellow
     "u2"   : 0x003049, # blue
     "u3"   : 0x70a288, # green
     "u4"   : 0x4f3824, # brown
-    "u5"   : 0x725ac1 # purple
+    "u5"   : 0x725ac1  # purple
     })
 p = c[1] # Pallet
 def rgb(value):
@@ -159,22 +159,23 @@ class Icon(object):
         self.altcolor = altcolor
         self.curColor = color
         self.outline = p['white']
-        self.loc = (loc[0]*55, loc[1]*55)
+        self.wi = 60
+        self.loc = (loc[0]*self.wi, loc[1]*self.wi)
         self.scr = scr
         self.text = text
         self.mode = mode
         self.selected = False
         l, t = self.loc
-        self.fnt = pg.font.SysFont('freemono', 12)
+        self.fnt = pg.font.SysFont('freemono', 15)
         s = self.fnt.size(self.text)[0]
-        w = (s//50 + 1)*50 + 5
-        self.rect = pg.Rect(l,t , w, 50)
+        self.w = (s//55 + 1)*self.wi
+        self.rect = pg.Rect(l,t , self.w, 50)
     def draw(self):
         pg.draw.rect(self.scr, self.curColor, self.rect)
         pg.draw.rect(self.scr, self.outline, self.rect, 1)
         s = self.fnt.size(self.text)
         txt = self.fnt.render(self.text, True, rgb(p['white']))
-        loc = (self.loc[0]+5, self.loc[1]+15)
+        loc = (self.loc[0]+(self.w//2)-(s[0]//2), 25-(s[1]//2))
         self.scr.blit(txt, loc)
     def clear(self):
         self.selected = False
@@ -201,7 +202,7 @@ class Menu(object):
             Icon(scr,(2,0), "Grasshopper", 3, p['u3']),
             Icon(scr,(4,0), "Spider", 4, p['u4']),
             Icon(scr,(5,0), "Beetle", 5, p['u5']),
-            Icon(scr,(7,0), "Swap", 0, p['swapl'], p['swapd'])
+            Icon(scr,(8,0), "Player", 0, p['swapl'], p['swapd'])
             ]
     def draw(self):
         for item in self.icons:
@@ -374,6 +375,8 @@ class Game(object):
             self.M.toggle_hex(newHex)
         if pos[1] < 50: # if clicked in menu region
             bttn = self.Me.click_button(pos)
+            if not bttn:
+                return False
             if bttn.mode == 0:
                 # Switch Player
                 if bttn.selected:

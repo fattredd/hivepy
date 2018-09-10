@@ -9,7 +9,7 @@ import map
 pg.init()
 pg.font.init()
 
-game = map.Game(500, 500, "Hive", 30)
+game = map.Game(550, 500, "Hive", 30)
 
 while True:
     if pg.event.peek():
