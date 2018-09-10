@@ -2,7 +2,7 @@
 import math as m
 import pygame as pg
 
-debug = True
+debug = False
 
 c = [] # Color dict
 c.append({
@@ -30,6 +30,10 @@ c.append({
     "u5"   : 0x725ac1 # purple
     })
 p = c[1] # Pallet
+def rgb(value):
+    value = hex(value).lstrip('0x')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
 class Hex(object):
     def __init__(self, q,r,s):
@@ -64,7 +68,7 @@ class Hex(object):
         try:
             return self.loc == other.loc
         except TypeError:
-            print("TypeError comapring hexes")
+            print("TypeError comparing hexes")
             return False
         return false
     def __ne__(self, other):
@@ -169,7 +173,7 @@ class Icon(object):
         pg.draw.rect(self.scr, self.curColor, self.rect)
         pg.draw.rect(self.scr, self.outline, self.rect, 1)
         s = self.fnt.size(self.text)
-        txt = self.fnt.render(self.text, True, (255,255,255))
+        txt = self.fnt.render(self.text, True, rgb(p['white']))
         loc = (self.loc[0]+5, self.loc[1]+15)
         self.scr.blit(txt, loc)
     def clear(self):
@@ -178,7 +182,6 @@ class Icon(object):
         self.curColor = self.color
         self.draw()
     def click(self):
-        print(self.selected)
         if not self.selected:
             self.selected = True
             self.curColor = self.altcolor
@@ -267,16 +270,21 @@ class Map(object):
         self.clear_map()
     def draw_hex(self, hex):
         ptl = self.L.polygon_corners(hex)
-        pg.draw.polygon(self.scr, hex.bgcolor, ptl)
-        pg.draw.polygon(self.scr, hex.fgcolor, ptl, 1)
+        pg.draw.polygon(self.scr, hex.fgcolor, ptl)
+        pg.draw.polygon(self.scr, hex.bgcolor, ptl, 1)
         if debug:
             ct = "{},{}".format(hex.q, hex.r)
             s = self.fnt.size(ct)
-            txt = self.fnt.render(ct, True, (255,255,255))
+            txt = self.fnt.render(ct, True, rgb(hex.bgcolor))
             loc = self.L.hex_to_pixel(hex).l()
             loc[0] = loc[0] - int(s[0]/2)
             loc[1] = loc[1] - int(s[1]/2)
             self.scr.blit(txt, loc)
+        else:
+            loc = self.L.hex_to_pixel(hex).l()
+            loc[0] = int(loc[0]+1)
+            loc[1] = int(loc[1]+1)
+            pg.draw.circle(self.scr, hex.bgcolor, loc, 15)
     def hex_exists(self, hex):
         for val in self.map:
             if hex == val:
@@ -340,11 +348,11 @@ class Map(object):
         pg.display.flip()
 
 class Game(object):
-    def __init__(self, h, w, name=""):
+    def __init__(self, h, w, name="", size=23):
         self.scr = pg.display.set_mode((h,w))
         pg.display.set_caption(name)
         self.clk = pg.time.Clock()
-        s = Point(23,23)
+        s = Point(size,size)
         orient = layout_pointy
         origin = Point(h/2, (w-50)/2 + 50)
         self.L = Layout(orient, s, origin, w, h)
