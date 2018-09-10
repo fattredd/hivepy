@@ -5,6 +5,12 @@ from pygame.locals import *
 import sys
 import map
 
+'''
+# TODO:
+Make more color pallets
+"Move" option
+
+'''
 
 pg.init()
 pg.font.init()

@@ -2,22 +2,15 @@
 import math as m
 import pygame as pg
 
-debug = False
+settings = {
+    'coords': False,
+    'outline': True,
+    'colorPallet': 0,
+    }
+
 
 c = [] # Color dict
-c.append({
-    "black": 0x000000,
-    "white": 0xe5f9e0,
-    "selected" : 0xcccccc,
-    "swapl": 0x37323e,
-    "swapd": 0xbfbdc1,
-    "u1"   : 0xe5f9e0, # https://coolors.co/e5f9e0-a3f7b5-40c9a2-2f9c95-4b3b47
-    "u2"   : 0xa3f7b5,
-    "u3"   : 0x40c9a2,
-    "u4"   : 0x2f9c95,
-    "u5"   : 0x4b3b47
-    })
-c.append({
+c.append({ #Primary
     "black": 0x000000,
     "white": 0xffffff,
     "selected": 0xc0c0c0,
@@ -29,7 +22,7 @@ c.append({
     "u4"   : 0x4f3824, # brown
     "u5"   : 0x725ac1  # purple
     })
-p = c[1] # Pallet
+p = c[settings['colorPallet']] # Pallet
 def rgb(value):
     value = hex(value).lstrip('0x')
     lv = len(value)
@@ -163,6 +156,7 @@ class Icon(object):
         self.loc = (loc[0]*self.wi, loc[1]*self.wi)
         self.scr = scr
         self.text = text
+        self.tcolor = p['white']
         self.mode = mode
         self.selected = False
         l, t = self.loc
@@ -174,19 +168,21 @@ class Icon(object):
         pg.draw.rect(self.scr, self.curColor, self.rect)
         pg.draw.rect(self.scr, self.outline, self.rect, 1)
         s = self.fnt.size(self.text)
-        txt = self.fnt.render(self.text, True, rgb(p['white']))
+        txt = self.fnt.render(self.text, True, rgb(self.tcolor))
         loc = (self.loc[0]+(self.w//2)-(s[0]//2), 25-(s[1]//2))
         self.scr.blit(txt, loc)
     def clear(self):
         self.selected = False
         self.outline = p['white']
+        self.tcolor = p['white']
         self.curColor = self.color
         self.draw()
     def click(self):
         if not self.selected:
             self.selected = True
             self.curColor = self.altcolor
-            self.outline = self.altcolor
+            self.outline = self.color
+            self.tcolor = self.color
             self.draw()
         else:
             self.clear()
@@ -208,13 +204,14 @@ class Menu(object):
         for item in self.icons:
             item.draw()
     def click_button(self, pos):
-        for bttn in self.icons: #clear bttns
-            if not bttn.mode == 0:
-                bttn.clear()
-        for icon in self.icons:
-            if icon.rect.collidepoint(pos):
-                button = icon
-        try:
+        try: # Because button isn't always set
+            for icon in self.icons: # find hit button
+                if icon.rect.collidepoint(pos):
+                    button = icon
+            for bttn in self.icons: #clear all other bttns
+                if not button.mode == 0:
+                    if not bttn.mode == 0:
+                        bttn.clear()
             return button.click()
         except UnboundLocalError:
             print("No button found at", pos)
@@ -272,8 +269,9 @@ class Map(object):
     def draw_hex(self, hex):
         ptl = self.L.polygon_corners(hex)
         pg.draw.polygon(self.scr, hex.fgcolor, ptl)
-        pg.draw.polygon(self.scr, hex.bgcolor, ptl, 1)
-        if debug:
+        if settings['outline']:
+            pg.draw.polygon(self.scr, hex.bgcolor, ptl, 1)
+        if settings['coords']:
             ct = "{},{}".format(hex.q, hex.r)
             s = self.fnt.size(ct)
             txt = self.fnt.render(ct, True, rgb(hex.bgcolor))
