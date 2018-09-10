@@ -3,24 +3,26 @@
 import pygame as pg
 from pygame.locals import *
 import sys
-from map import *
-from units import *
+import map
 
 
 pg.init()
 pg.font.init()
 
-dim = (700, 400)
-scr = pg.display.set_mode(dim)
-pg.display.set_caption("Hive")
-clk = pg.time.Clock()
+game = map.Game(450, 450, "Hive")
 
 while True:
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            pg.quit()
-            sys.exit()
-        elif event.type == pg.M_CLICK:
-            print("UP")
-        pg.display.flip()
-        clk.tick(20)
+    if pg.event.peek():
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            elif event.type == pg.KEYUP:
+                print("Keyup",event.key)
+                if event.key == pg.K_ESCAPE:
+                    pg.quit()
+                    sys.exit()
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                game.handle_click(event.pos)
+            pg.display.flip()
+            #print(event.type)
