@@ -362,7 +362,8 @@ class Game(object):
             newHex = self.L.pixel_to_hex(point)
             newHex.bgcolor = self.mode
             newHex.fgcolor = self.playerColor
-            self.M.toggle_hex(newHex)
+            if self.mode > 0:
+                self.M.toggle_hex(newHex)
         if pos[1] < 50: # if clicked in menu region
             bttn = self.Me.click_button(pos)
             if not bttn:
@@ -374,6 +375,6 @@ class Game(object):
                 else:
                     self.playerColor = p['swapl']
             if bttn.mode == -1:
-                print("Move Mode")
+                self.mode = -1
             else:
                 self.mode = bttn.color
