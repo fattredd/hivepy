@@ -1,28 +1,13 @@
 # Hive Classes
 import math as m
 import pygame as pg
+import config
+import units
 
-settings = {
-    'coords': False,
-    'outline': True,
-    'colorPallet': 0,
-    }
+settings = config.settings
+p = config.p
 
 
-c = [] # Color dict
-c.append({ #Primary
-    "black": 0x000000,
-    "white": 0xffffff,
-    "selected": 0xc0c0c0,
-    "swapl": 0xc0c5c1,
-    "swapd": 0x343633,
-    "u1"   : 0xaf9b46, #yellow
-    "u2"   : 0x003049, # blue
-    "u3"   : 0x70a288, # green
-    "u4"   : 0x4f3824, # brown
-    "u5"   : 0x725ac1  # purple
-    })
-p = c[settings['colorPallet']] # Pallet
 def rgb(value):
     value = hex(value).lstrip('0x')
     lv = len(value)
@@ -190,16 +175,22 @@ class Icon(object):
         
     
 class Menu(object):
-    def __init__(self, h, w, scr):
+    def __init__(self, h, w, scr, units):
         self.size = (h,w)
-        self.icons = [
+        self.units = units
+        self.icons = []
+        swapI = Icon(scr,(8,0), "Player", 0, p['swapl'], p['swapd'])
+        for i, u in enumerate(units):
+            self.icons.append(Icon(scr,(i,0), u.name, u.mode, u.color))
+            '''
             Icon(scr,(0,0), "Queen", 1, p['u1']),
             Icon(scr,(1,0), "Ant", 2, p['u2']),
             Icon(scr,(2,0), "Grasshopper", 3, p['u3']),
             Icon(scr,(4,0), "Spider", 4, p['u4']),
             Icon(scr,(5,0), "Beetle", 5, p['u5']),
             Icon(scr,(8,0), "Player", 0, p['swapl'], p['swapd'])
-            ]
+            '''
+        self.icons.append(swapI)
     def draw(self):
         for item in self.icons:
             item.draw()
@@ -354,9 +345,10 @@ class Game(object):
         s = Point(size,size)
         orient = layout_pointy
         origin = Point(h/2, (w-50)/2 + 50)
+        self.units = units.units
         self.L = Layout(orient, s, origin, w, h)
         self.M = Map(self.scr, self.L)
-        self.Me =Menu(50, w, self.scr)
+        self.Me =Menu(50, w, self.scr, self.units)
         self.Me.draw()
         #M.gen_map("hex", 6)
         #M.draw_map()
@@ -381,5 +373,7 @@ class Game(object):
                     self.playerColor = p['swapd']
                 else:
                     self.playerColor = p['swapl']
+            if bttn.mode == -1:
+                print("Move Mode")
             else:
                 self.mode = bttn.color
