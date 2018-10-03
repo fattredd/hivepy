@@ -223,7 +223,7 @@ def distance(self, a, b):
 def direction(direction):
     return hex_directions[direction % 6]
 
-def neighbor(hex, direc):
+def hex_neighbor(hex, direc):
     return hex + direction(direc)
 
 def FractionalHex(q, r, s):
@@ -255,10 +255,14 @@ class Map(object):
         self.scr = scr
         self.L = layout
         self.map = []
+        self.highlight = []
         self.fnt = pg.font.SysFont('freemono', 12)
         self.clear_map()
-    def draw_hex(self, hex):
+    def draw_hex(self, hex, highlight=False):
         ptl = self.L.polygon_corners(hex)
+        if highlight:
+            hex.fgcolor = p['h0']
+            hex.bgcolor = p['h1']
         pg.draw.polygon(self.scr, hex.fgcolor, ptl)
         if settings['outline']:
             pg.draw.polygon(self.scr, hex.bgcolor, ptl, 1)
@@ -270,7 +274,7 @@ class Map(object):
             loc[0] = loc[0] - int(s[0]/2)
             loc[1] = loc[1] - int(s[1]/2)
             self.scr.blit(txt, loc)
-        else:
+        elif not highlight:
             loc = self.L.hex_to_pixel(hex).l()
             loc[0] = int(loc[0]+1)
             loc[1] = int(loc[1]+1)
@@ -280,7 +284,22 @@ class Map(object):
             if hex == val:
                 return True
         return False
-    def add_hex(self, hex):
+    def get_hex(self, hex):
+        for val in self.map:
+            if hex == val:
+                return val
+        return False
+    def hex_distance(self, a, b):
+        # 3D Manhatan Distance
+        return ( abs(a.q - b.q) + abs(a.r - b.r) + abs(a.s - a.s) ) / 2
+    def hex_adjacent(self, hex):
+        # If there's at least one adjacent hex
+        for i in range(6):
+            if self.hex_exists(hex + hex_neighbor(hex, i)):
+                self.add_hex(hex+hex_neighbor(hex,i), self.highlight)
+                return True
+        return False
+    def add_hex(self, hex, map):
         # Replace any preexisting hexes
         replacement = False
         for i, val in enumerate(self.map):
@@ -298,6 +317,19 @@ class Map(object):
             self.add_hex(hex)
         else:
             self.rm_hex(hex)
+    def find_moves(self, piece):
+        self.highlight = []
+        for x in range (-10,10):
+            for y in range(-10,10):
+                h = Hex(x,y,-x-y)
+                a = self.hex_adjacent(h)
+                b = self.hex_distance(piece,h) == 3
+                c = not self.hex_exists(h)
+                if a and c:
+                    print(x,y,a,b)
+                if a and b and c:
+                    self.highlight.append(h)
+        self.draw_map()
     def clear_map(self):
         rect = self.L.map_rect
         pg.draw.rect(self.scr, 0, rect)
@@ -305,6 +337,8 @@ class Map(object):
         self.clear_map()
         for h in self.map:
             self.draw_hex(h)
+        for h in self.highlight:
+            self.draw_hex(h, True)
 
     def gen_map(self, t="parallel", *xargs):
         t = t.lower()
@@ -343,7 +377,7 @@ class Game(object):
         pg.display.set_caption(name)
         self.clk = pg.time.Clock()
         s = Point(size,size)
-        orient = layout_pointy
+        orient = layout_flat
         origin = Point(h/2, (w-50)/2 + 50)
         self.units = units.units
         self.L = Layout(orient, s, origin, w, h)
@@ -358,12 +392,16 @@ class Game(object):
 
     def handle_click(self, pos):
         if pos[1] > 50: # if clicked in hex region
+            print("Mode:",hex(self.mode), hex(self.playerColor))
             point = Point(pos[0], pos[1])
             newHex = self.L.pixel_to_hex(point)
             newHex.bgcolor = self.mode
             newHex.fgcolor = self.playerColor
-            if self.mode > 0:
+            if self.mode > 0: # Place mode
                 self.M.toggle_hex(newHex)
+            elif self.mode < 0: # Move mode
+                piece = self.M.get_hex(newHex)
+                self.M.find_moves(newHex)
         if pos[1] < 50: # if clicked in menu region
             bttn = self.Me.click_button(pos)
             if not bttn:
